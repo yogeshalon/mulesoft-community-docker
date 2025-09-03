@@ -6,7 +6,7 @@ LABEL maintainer="AloneMy" \
       org.opencontainers.image.title="MuleSoft Community Edition" \
       org.opencontainers.image.version="4.9.0" \
       org.opencontainers.image.description="Docker image for MuleSoft CE 4.9.0 with Adoptium JDK 17, Maven 3.9.11, IST timezone, and auto-restart support" \
-      org.opencontainers.image.source="https://github.com/your-username/mule-docker" \
+      org.opencontainers.image.source="https://github.com/yogeshalon/mulesoft-community-docker" \
       org.opencontainers.image.licenses="CPAL-1.0"
 
 # Environment variables for Mule, Maven, and IST timezone
