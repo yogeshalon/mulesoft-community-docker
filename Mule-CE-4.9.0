@@ -1,0 +1,65 @@
+# Use Adoptium Eclipse Temurin JDK 17 base image for MuleSoft CE 4.9.0
+FROM eclipse-temurin:17-jdk
+
+# Metadata labels for the Docker image
+LABEL maintainer="AloneMy" \
+      org.opencontainers.image.title="MuleSoft Community Edition" \
+      org.opencontainers.image.version="4.9.0" \
+      org.opencontainers.image.description="Docker image for MuleSoft CE 4.9.0 with Adoptium JDK 17, Maven 3.9.11, IST timezone, and auto-restart support" \
+      org.opencontainers.image.source="https://github.com/your-username/mule-docker" \
+      org.opencontainers.image.licenses="CPAL-1.0"
+
+# Environment variables for Mule, Maven, and IST timezone
+ENV MULE_HOME=/opt/mule
+ENV MULE_VERSION=4.9.0
+ENV MULE_DIST_URL=https://repository.mulesoft.org/nexus/service/local/repositories/releases/content/org/mule/distributions/mule-standalone/4.9.0/mule-standalone-4.9.0.tar.gz
+ENV MAVEN_VERSION=3.9.11
+ENV MAVEN_HOME=/opt/maven
+ENV PATH=${MAVEN_HOME}/bin:${PATH}
+ENV TZ=Asia/Kolkata
+
+# Install dependencies, set timezone, and create directories
+RUN apt-get update && apt-get install -y wget tar curl tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    mkdir -p ${MULE_HOME} ${MAVEN_HOME} && \
+    useradd --user-group --shell /bin/false mule && \
+    chown -R mule:mule ${MULE_HOME} ${MAVEN_HOME}
+
+# Install Maven
+WORKDIR /opt
+RUN wget -q https://downloads.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    tar -xzvf apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    mv apache-maven-${MAVEN_VERSION} maven && \
+    rm apache-maven-${MAVEN_VERSION}-bin.tar.gz && \
+    chown -R mule:mule ${MAVEN_HOME}
+
+# Download and extract Mule runtime
+RUN wget -q ${MULE_DIST_URL} -O /tmp/mule.tar.gz && \
+    tar -xzvf /tmp/mule.tar.gz -C /opt && \
+    mv /opt/mule-standalone-${MULE_VERSION} ${MULE_HOME} && \
+    rm /tmp/mule.tar.gz && \
+    chown -R mule:mule ${MULE_HOME} && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Set working directory to Mule home
+WORKDIR ${MULE_HOME}
+
+# Define volume mount points for Mule apps, logs, configs, and domains
+VOLUME ["${MULE_HOME}/apps", "${MULE_HOME}/logs", "${MULE_HOME}/conf", "${MULE_HOME}/domains"]
+
+# Copy a Mule application (uncomment and replace with your app's JAR if needed)
+# COPY your-mule-app.jar ${MULE_HOME}/apps/
+
+# Expose default HTTP port for Mule applications
+EXPOSE 8081
+
+# Health check to ensure Mule runtime is running
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8081 || exit 1
+
+# Run as non-root mule user
+USER mule
+
+# Start Mule runtime in console mode
+ENTRYPOINT ["./bin/mule"]
+CMD ["console"]
