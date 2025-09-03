@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  mule:
+    build:
+      context: .
+      dockerfile: Mule-CE-4.9.0
+      args:
+        MULE_VERSION: "4.9.0"
+        MAVEN_VERSION: "3.9.11"
+    image: mulesoft-ce:4.9.0
+    container_name: mule-ce-4.9.0
+    environment:
+      MULE_HOME: /opt/mule
+      MULE_VERSION: "4.9.0"
+      MAVEN_VERSION: "3.9.11"
+      MAVEN_HOME: /opt/maven
+      TZ: Asia/Kolkata
+    volumes:
+      - mule_apps:/opt/mule/apps
+      - mule_logs:/opt/mule/logs
+      - mule_conf:/opt/mule/conf
+      - mule_domains:/opt/mule/domains
+    ports:
+      - "8081:8081"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    user: mule
+
+volumes:
+  mule_apps:
+  mule_logs:
+  mule_conf:
+  mule_domains:
